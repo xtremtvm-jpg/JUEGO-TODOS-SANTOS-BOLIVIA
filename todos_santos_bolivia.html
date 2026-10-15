@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Las Aventuras de la Tantawawa - Todos Santos Bolivia</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #2c1654;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 900px;
+            height: 600px;
+            background: linear-gradient(to bottom, #4a235a, #28104e);
+            border: 8px solid #f39c12;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .active-screen {
+            display: flex;
+        }
+
+        h1 {
+            font-size: 40px;
+            color: #f1c40f;
+            text-shadow: 3px 3px 0 #d35400, -2px -2px 0 #000;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 26px;
+            color: #e67e22;
+            text-shadow: 2px 2px 0 #000;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #f39c12;
+            text-shadow: 1px 1px 2px #000;
+            max-width: 700px;
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, #27ae60, #1e8449);
+            color: white;
+            border: 4px solid #f1c40f;
+            padding: 15px 35px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #145a32, 0 10px 10px rgba(0,0,0,0.4);
+            transition: all 0.1s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #145a32, 0 12px 12px rgba(0,0,0,0.4);
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #145a32, 0 4px 4px rgba(0,0,0,0.4);
+        }
+
+        .hud {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 10;
+        }
+
+        .hud-item {
+            background: rgba(0,0,0,0.6);
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 2px solid #f39c12;
+        }
+
+        /* NIVEL 1 */
+        #game-canvas-1 {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #1a0826, #3d1e6d);
+        }
+
+        /* NIVEL 2 - MEMORIA */
+        #memory-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            max-width: 650px;
+            margin-top: 10px;
+        }
+
+        .memory-card {
+            width: 100px;
+            height: 110px;
+            background: #f39c12;
+            border: 4px solid #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 6px 0 #d35400;
+            transition: transform 0.2s ease;
+        }
+
+        .memory-card.flipped {
+            background: #fff;
+            transform: rotateY(180deg);
+        }
+
+        .memory-card.matched {
+            background: #2ecc71;
+            border-color: #f1c40f;
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        /* NIVEL 2 - HORNO */
+        #oven-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bread-builder {
+            width: 180px;
+            height: 220px;
+            background: #d35400;
+            border-radius: 90px 90px 40px 40px;
+            position: relative;
+            border: 6px solid #e67e22;
+            margin: 20px;
+            box-shadow: inset 0 0 20px #8e44ad;
+        }
+
+        .face-placed {
+            position: absolute;
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            background: #ecf0f1;
+            border-radius: 50%;
+            border: 3px solid #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+        }
+
+        /* NIVEL 3 */
+        #game-canvas-3 {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #2980b9, #6dd5fa, #ffffff);
+        }
+
+        /* MODAL PREGUNTA CULTURAL */
+        #quiz-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 30px;
+        }
+
+        .quiz-card {
+            background: #34495e;
+            border: 6px solid #f1c40f;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        .quiz-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .quiz-opt-btn {
+            background: #e67e22;
+            color: white;
+            border: 3px solid #fff;
+            padding: 15px 25px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .quiz-opt-btn:hover {
+            transform: scale(1.05);
+            background: #d35400;
+        }
+
+        /* CONTROLES TÁCTILES PANTALLA */
+        .touch-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .touch-btn {
+            width: 75px;
+            height: 75px;
+            background: rgba(241, 196, 15, 0.8);
+            border: 4px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            color: #000;
+            pointer-events: auto;
+            touch-action: manipulation;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .touch-btn:active {
+            background: rgba(230, 126, 34, 0.9);
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+
+    <!-- PANTALLA DE INICIO -->
+    <div id="screen-start" class="screen active-screen">
+        <h1>🌾 Las Aventuras de la Tantawawa 🌾</h1>
+        <h2>Celebrando Todos Santos en Bolivia</h2>
+        <p>¡Hola amiguito! Ayúdanos a preparar la hermosa Mesa de Todos Santos (Apxata) jugando los 3 niveles divertidos.</p>
+        <button class="btn" onclick="startGame()">¡JUGAR AHORA!</button>
+    </div>
+
+    <!-- PANTALLA DERROTA -->
+    <div id="screen-gameover" class="screen">
+        <h1 style="color: #e74c3c;">¡OH NO! PERDISTE 💔</h1>
+        <p id="gameover-msg">Se ha atrapado un objeto incorrecto o te has equivocado.</p>
+        <button class="btn" onclick="retryCurrentLevel()">¡INTENTAR DE NUEVO!</button>
+        <button class="btn" style="background: #7f8c8d;" onclick="showScreen('screen-start')">MENÚ PRINCIPAL</button>
+    </div>
+
+    <!-- PANTALLA ÉXITO ENTRE NIVELES -->
+    <div id="screen-level-complete" class="screen">
+        <h1>¡EXCELENTE TRABAJO! ⭐</h1>
+        <p id="complete-msg">¡Has completado el nivel con éxito!</p>
+        <button class="btn" id="next-level-btn" onclick="nextLevel()">SIGUIENTE NIVEL ➔</button>
+    </div>
+
+    <!-- NIVEL 1: ATRAPA CON LA CANASTA -->
+    <div id="screen-level1" class="screen" style="padding:0;">
+        <div class="hud">
+            <div class="hud-item">🧺 Puntos: <span id="l1-score">0</span> / 8</div>
+            <div class="hud-item">Nivel 1: Atrapa los Alimentos</div>
+        </div>
+        <canvas id="game-canvas-1"></canvas>
+        <div class="touch-controls">
+            <div style="display:flex; gap:15px;">
+                <div class="touch-btn" id="btn-left">◄</div>
+                <div class="touch-btn" id="btn-right">►</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NIVEL 2: MEMORIA DE TODOS SANTOS -->
+    <div id="screen-level2" class="screen">
+        <div class="hud">
+            <div class="hud-item">🧠 Intentos: <span id="l2-attempts">0</span> / 10</div>
+            <div class="hud-item">Parejas: <span id="l2-pairs">0</span> / 5</div>
+        </div>
+        
+        <div id="memory-area">
+            <h2>Encuentra las 5 Parejas Tradicionales</h2>
+            <div id="memory-board"></div>
+        </div>
+
+        <div id="oven-area">
+            <h2>¡Carilla encontrada! Ahora a hornear</h2>
+            <div class="bread-builder">
+                <div class="face-placed">🎭</div>
+            </div>
+            <button class="btn" onclick="bakeBread()">¡HORNEAR TANTAWAWA! 🔥</button>
+        </div>
+    </div>
+
+    <!-- NIVEL 3: MARIO BROS PLATAFORMAS -->
+    <div id="screen-level3" class="screen" style="padding:0;">
+        <div class="hud">
+            <div class="hud-item">✨ Puntos: <span id="l3-score">0</span></div>
+            <div class="hud-item">Nivel 3: El Camino del Ajayito</div>
+        </div>
+        <canvas id="game-canvas-3"></canvas>
+        <div class="touch-controls">
+            <div style="display:flex; gap:15px;">
+                <div class="touch-btn" id="btn-l3-left">◄</div>
+                <div class="touch-btn" id="btn-l3-right">►</div>
+            </div>
+            <div class="touch-btn" id="btn-l3-jump">▲</div>
+        </div>
+    </div>
+
+    <!-- MODAL PREGUNTA NIVEL 3 -->
+    <div id="quiz-modal">
+        <div class="quiz-card">
+            <h2 id="quiz-question">¿Pregunta Cultural?</h2>
+            <div class="quiz-options">
+                <button class="quiz-opt-btn" onclick="answerQuiz(0)" id="opt-0">Opción A</button>
+                <button class="quiz-opt-btn" onclick="answerQuiz(1)" id="opt-1">Opción B</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- EFECTOS DE SONIDO SINTETIZADOS (100% OFFLINE) ---
+    let audioCtx = null;
+    
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playSound(type) {
+        try {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'catch') {
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            }
+        } catch(e) {
+            console.log("Audio no soportado o bloqueado");
+        }
+    }
+
+    // --- ESTADO GLOBAL ---
+    let currentLevel = 1;
+    let keys = {};
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+        document.getElementById(screenId).classList.add('active-screen');
+    }
+
+    function startGame() {
+        initAudio();
+        currentLevel = 1;
+        initLevel1();
+    }
+
+    function triggerGameOver(msg) {
+        playSound('fail');
+        document.getElementById('gameover-msg').innerText = msg;
+        showScreen('screen-gameover');
+    }
+
+    function retryCurrentLevel() {
+        if (currentLevel === 1) initLevel1();
+        else if (currentLevel === 2) initLevel2();
+        else if (currentLevel === 3) initLevel3();
+    }
+
+    function nextLevel() {
+        currentLevel++;
+        if (currentLevel === 2) initLevel2();
+        else if (currentLevel === 3) initLevel3();
+        else {
+            document.getElementById('complete-msg').innerText = "¡FELICIDADES! Has completado todo el juego y la Mesa de Todos Santos está lista. ☀️🌾";
+            document.getElementById('next-level-btn').style.display = 'none';
+            showScreen('screen-level-complete');
+        }
+    }
+
+    // ==========================================
+    // NIVEL 1: ATRAPA ALIMENTOS CON LA CANASTA
+    // ==========================================
+    let canvas1, ctx1, l1Anim;
+    let basket = { x: 390, y: 500, w: 120, h: 60, speed: 8 };
+    let fallingItems = [];
+    let l1Score = 0;
+
+    const GOOD_ITEMS = [
+        { name: 'Tantawawa', icon: '👶', isGood: true },
+        { name: 'Caballito', icon: '🐎', isGood: true },
+        { name: 'Caña', icon: '🎋', isGood: true },
+        { name: 'Flores', icon: '🌼', isGood: true },
+        { name: 'Escalera', icon: '🪜', isGood: true }
+    ];
+
+    const BAD_ITEMS = [
+        { name: 'Pizza', icon: '🍕', isGood: false },
+        { name: 'Pelota', icon: '⚽', isGood: false },
+        { name: 'Hamburguesa', icon: '🍔', isGood: false }
+    ];
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
+    function initLevel1() {
+        showScreen('screen-level1');
+        canvas1 = document.getElementById('game-canvas-1');
+        canvas1.width = 900;
+        canvas1.height = 600;
+        ctx1 = canvas1.getContext('2d');
+        
+        basket.x = 390;
+        fallingItems = [];
+        l1Score = 0;
+        document.getElementById('l1-score').innerText = l1Score;
+
+        // Controles táctiles
+        const btnL = document.getElementById('btn-left');
+        const btnR = document.getElementById('btn-right');
+        btnL.ontouchstart = btnL.onmousedown = (e) => { e.preventDefault(); keys['ArrowLeft'] = true; };
+        btnL.ontouchend = btnL.onmouseup = (e) => { e.preventDefault(); keys['ArrowLeft'] = false; };
+        btnR.ontouchstart = btnR.onmousedown = (e) => { e.preventDefault(); keys['ArrowRight'] = true; };
+        btnR.ontouchend = btnR.onmouseup = (e) => { e.preventDefault(); keys['ArrowRight'] = false; };
+
+        if (l1Anim) cancelAnimationFrame(l1Anim);
+        updateLevel1();
+    }
+
+    function spawnItem() {
+        if (Math.random() < 0.03) {
+            const isGood = Math.random() > 0.35;
+            const pool = isGood ? GOOD_ITEMS : BAD_ITEMS;
+            const template = pool[Math.floor(Math.random() * pool.length)];
+            fallingItems.push({
+                x: Math.random() * (canvas1.width - 60),
+                y: -60,
+                size: 60,
+                speed: 2.5 + Math.random() * 1.5,
+                ...template
+            });
+        }
+    }
+
+    function updateLevel1() {
+        ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+
+        // Movimiento canasta
+        if ((keys['ArrowLeft'] || keys['KeyA']) && basket.x > 0) basket.x -= basket.speed;
+        if ((keys['ArrowRight'] || keys['KeyD']) && basket.x < canvas1.width - basket.w) basket.x += basket.speed;
+
+        // Dibuja Canasta/Aguayo
+        ctx1.fillStyle = '#e67e22';
+        drawRoundedRect(ctx1, basket.x, basket.y, basket.w, basket.h, 15);
+        ctx1.fill();
+        ctx1.lineWidth = 4;
+        ctx1.strokeStyle = '#f1c40f';
+        ctx1.stroke();
+        ctx1.font = '35px Arial';
+        ctx1.fillText('🧺', basket.x + 40, basket.y + 42);
+
+        // Generar y mover objetos
+        spawnItem();
+
+        for (let i = fallingItems.length - 1; i >= 0; i--) {
+            let item = fallingItems[i];
+            item.y += item.speed;
+
+            // Dibuja objeto gigante
+            ctx1.font = '50px Arial';
+            ctx1.fillText(item.icon, item.x, item.y);
+
+            // Colisión con la canasta
+            if (item.y >= basket.y - 20 && item.y <= basket.y + basket.h &&
+                item.x + item.size >= basket.x && item.x <= basket.x + basket.w) {
+                
+                if (item.isGood) {
+                    playSound('catch');
+                    l1Score++;
+                    document.getElementById('l1-score').innerText = l1Score;
+                    fallingItems.splice(i, 1);
+
+                    if (l1Score >= 8) {
+                        playSound('win');
+                        cancelAnimationFrame(l1Anim);
+                        document.getElementById('complete-msg').innerText = "¡Has reunido todos los elementos tradicionales para la mesa!";
+                        document.getElementById('next-level-btn').style.display = 'inline-block';
+                        showScreen('screen-level-complete');
+                        return;
+                    }
+                } else {
+                    // Perder por atrapar mal objeto
+                    cancelAnimationFrame(l1Anim);
+                    triggerGameOver(`¡Oh no! Atrapaste "${item.name}" que no pertenece a Todos Santos.`);
+                    return;
+                }
+            } else if (item.y > canvas1.height + 60) {
+                fallingItems.splice(i, 1);
+            }
+        }
+
+        l1Anim = requestAnimationFrame(updateLevel1);
+    }
+
+    // ==========================================
+    // NIVEL 2: JUEGO DE MEMORIA (10 CARTAS)
+    // ==========================================
+    const MEMORY_ITEMS = [
+        { icon: '👶', name: 'Tantawawa' },
+        { icon: '🐎', name: 'Caballito' },
+        { icon: '🪜', name: 'Escalera' },
+        { icon: '🌼', name: 'Flores' },
+        { icon: '🎋', name: 'Caña' }
+    ];
+
+    let memoryCards = [];
+    let flippedCards = [];
+    let l2Attempts = 0;
+    let l2PairsFound = 0;
+    let lockBoard = false;
+
+    function initLevel2() {
+        showScreen('screen-level2');
+        document.getElementById('memory-area').style.display = 'block';
+        document.getElementById('oven-area').style.display = 'none';
+        
+        l2Attempts = 0;
+        l2PairsFound = 0;
+        flippedCards = [];
+        lockBoard = false;
+        document.getElementById('l2-attempts').innerText = l2Attempts;
+        document.getElementById('l2-pairs').innerText = l2PairsFound;
+
+        // Crear 10 cartas (5 parejas)
+        let deck = [...MEMORY_ITEMS, ...MEMORY_ITEMS];
+        deck.sort(() => Math.random() - 0.5);
+
+        const board = document.getElementById('memory-board');
+        board.innerHTML = '';
+
+        deck.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.classList.add('memory-card');
+            card.dataset.icon = item.icon;
+            card.dataset.index = index;
+            card.innerText = '❓';
+            card.onclick = () => flipCard(card);
+            board.appendChild(card);
+        });
+    }
+
+    function flipCard(card) {
+        if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+        card.classList.add('flipped');
+        card.innerText = card.dataset.icon;
+        flippedCards.push(card);
+
+        if (flippedCards.length === 2) {
+            l2Attempts++;
+            document.getElementById('l2-attempts').innerText = l2Attempts;
+            checkMemoryMatch();
+        }
+    }
+
+    function checkMemoryMatch() {
+        lockBoard = true;
+        const [card1, card2] = flippedCards;
+
+        if (card1.dataset.icon === card2.dataset.icon) {
+            playSound('catch');
+            card1.classList.add('matched');
+            card2.classList.add('matched');
+            l2PairsFound++;
+            document.getElementById('l2-pairs').innerText = l2PairsFound;
+            flippedCards = [];
+            lockBoard = false;
+
+            if (l2PairsFound === 5) {
+                setTimeout(() => {
+                    playSound('win');
+                    document.getElementById('memory-area').style.display = 'none';
+                    document.getElementById('oven-area').style.display = 'flex';
+                }, 500);
+            }
+        } else {
+            playSound('fail');
+            setTimeout(() => {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+                card1.innerText = '❓';
+                card2.innerText = '❓';
+                flippedCards = [];
+                lockBoard = false;
+
+                if (l2Attempts >= 10) {
+                    triggerGameOver("¡Has agotado tus 10 intentos en la memoria! Inténtalo de nuevo.");
+                }
+            }, 800);
+        }
+    }
+
+    function bakeBread() {
+        playSound('win');
+        document.getElementById('complete-msg').innerText = "¡La Tantawawa se ha horneado con éxito! Huele delicioso.";
+        document.getElementById('next-level-btn').style.display = 'inline-block';
+        showScreen('screen-level-complete');
+    }
+
+    // ==========================================
+    // NIVEL 3: MARIO BROS CON BLOQUES PREGUNTA
+    // ==========================================
+    let canvas3, ctx3, l3Anim;
+    let ajayito = { x: 50, y: 400, w: 50, h: 60, vx: 0, vy: 0, grounded: false };
+    let cameraX = 0;
+    let l3Score = 0;
+    let currentQuizBlock = null;
+
+    const QUIZZES = [
+        {
+            q: "¿Qué pan ayuda al Ajayito a bajar del cielo?",
+            opts: ["Escalera de Pan", "Sopa de Fideos"],
+            correct: 0
+        },
+        {
+            q: "¿Qué le da fuerza al Ajayito en su viaje?",
+            opts: ["Caña de Azúcar", "Gaseosa"],
+            correct: 0
+        },
+        {
+            q: "¿Qué flor de color vivo adorna la mesa?",
+            opts: ["Pasuchil / Retama", "Plástico"],
+            correct: 0
+        }
+    ];
+
+    let levelBlocks = [];
+    let levelGaps = [];
+
+    function initLevel3() {
+        showScreen('screen-level3');
+        canvas3 = document.getElementById('game-canvas-3');
+        canvas3.width = 900;
+        canvas3.height = 600;
+        ctx3 = canvas3.getContext('2d');
+
+        ajayito = { x: 50, y: 400, w: 50, h: 60, vx: 0, vy: 0, grounded: false };
+        cameraX = 0;
+        l3Score = 0;
+        document.getElementById('l3-score').innerText = l3Score;
+
+        // Crear bloques '?'
+        levelBlocks = [
+            { x: 300, y: 350, w: 50, h: 50, hit: false, quizIndex: 0 },
+            { x: 600, y: 320, w: 50, h: 50, hit: false, quizIndex: 1 },
+            { x: 950, y: 330, w: 50, h: 50, hit: false, quizIndex: 2 }
+        ];
+
+        // Huecos / Pozos
+        levelGaps = [
+            { x1: 450, x2: 550 },
+            { x1: 800, x2: 900 }
+        ];
+
+        // Controles táctiles Nivel 3
+        const btnL = document.getElementById('btn-l3-left');
+        const btnR = document.getElementById('btn-l3-right');
+        const btnJ = document.getElementById('btn-l3-jump');
+
+        btnL.ontouchstart = btnL.onmousedown = (e) => { e.preventDefault(); keys['ArrowLeft'] = true; };
+        btnL.ontouchend = btnL.onmouseup = (e) => { e.preventDefault(); keys['ArrowLeft'] = false; };
+        btnR.ontouchstart = btnR.onmousedown = (e) => { e.preventDefault(); keys['ArrowRight'] = true; };
+        btnR.ontouchend = btnR.onmouseup = (e) => { e.preventDefault(); keys['ArrowRight'] = false; };
+        btnJ.ontouchstart = btnJ.onmousedown = (e) => {
+            e.preventDefault();
+            if (ajayito.grounded) { ajayito.vy = -14; ajayito.grounded = false; playSound('catch'); }
+        };
+
+        if (l3Anim) cancelAnimationFrame(l3Anim);
+        updateLevel3();
+    }
+
+    function updateLevel3() {
+        ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+
+        // Física
+        if (keys['ArrowLeft'] || keys['KeyA']) ajayito.vx = -5;
+        else if (keys['ArrowRight'] || keys['KeyD']) ajayito.vx = 5;
+        else ajayito.vx = 0;
+
+        if ((keys['ArrowUp'] || keys['Space'] || keys['KeyW']) && ajayito.grounded) {
+            ajayito.vy = -14;
+            ajayito.grounded = false;
+            playSound('catch');
+        }
+
+        ajayito.vy += 0.7; // Gravedad
+        ajayito.x += ajayito.vx;
+        ajayito.y += ajayito.vy;
+
+        // Camara sigue
+        if (ajayito.x - cameraX > 400) cameraX = ajayito.x - 400;
+
+        // Dibuja Suelo y Gaps
+        ctx3.save();
+        ctx3.translate(-cameraX, 0);
+
+        ctx3.fillStyle = '#8e44ad';
+        let groundY = 480;
+
+        // Terreno continuo excepto en huecos
+        for (let x = -100; x < 1500; x += 10) {
+            let isGap = levelGaps.some(g => x >= g.x1 && x <= g.x2);
+            if (!isGap) {
+                ctx3.fillRect(x, groundY, 10, 120);
+            }
+        }
+
+        // Colisión Suelo
+        let overGap = levelGaps.some(g => ajayito.x + ajayito.w > g.x1 && ajayito.x < g.x2);
+        if (ajayito.y + ajayito.h >= groundY && !overGap) {
+            ajayito.y = groundY - ajayito.h;
+            ajayito.vy = 0;
+            ajayito.grounded = true;
+        }
+
+        // Dibuja Bloques '?'
+        levelBlocks.forEach(b => {
+            ctx3.fillStyle = b.hit ? '#7f8c8d' : '#f1c40f';
+            ctx3.fillRect(b.x, b.y, b.w, b.h);
+            ctx3.strokeStyle = '#fff';
+            ctx3.strokeRect(b.x, b.y, b.w, b.h);
+            ctx3.fillStyle = '#000';
+            ctx3.font = '28px Arial';
+            ctx3.fillText(b.hit ? '✓' : '?', b.x + 18, b.y + 36);
+
+            // Colisión desde abajo
+            if (ajayito.x + ajayito.w > b.x && ajayito.x < b.x + b.w &&
+                ajayito.y <= b.y + b.h && ajayito.y >= b.y + b.h - 15 && ajayito.vy < 0) {
+                if (!b.hit) {
+                    b.hit = true;
+                    triggerQuiz(b);
+                }
+            }
+        });
+
+        // Dibuja Personaje Ajayito
+        ctx3.font = '50px Arial';
+        ctx3.fillText('✨', ajayito.x, ajayito.y + 45);
+
+        // Meta Final
+        ctx3.fillStyle = '#2ecc71';
+        ctx3.fillRect(1300, groundY - 100, 20, 100);
+        ctx3.font = '40px Arial';
+        ctx3.fillText('☀️ Apxata', 1260, groundY - 110);
+
+        ctx3.restore();
+
+        // Caída al Vacío
+        if (ajayito.y > canvas3.height) {
+            cancelAnimationFrame(l3Anim);
+            triggerGameOver("¡Te has caído a un pozo! Salta con cuidado.");
+            return;
+        }
+
+        // Llegada a la meta
+        if (ajayito.x >= 1300) {
+            cancelAnimationFrame(l3Anim);
+            playSound('win');
+            document.getElementById('complete-msg').innerText = "¡FELICIDADES! Llegaste a la Mesa de Todos Santos. ¡Los Ajayitos están felices! 🌾☀️";
+            document.getElementById('next-level-btn').style.display = 'none';
+            showScreen('screen-level-complete');
+            return;
+        }
+
+        l3Anim = requestAnimationFrame(updateLevel3);
+    }
+
+    function triggerQuiz(block) {
+        currentQuizBlock = block;
+        cancelAnimationFrame(l3Anim);
+        const qData = QUIZZES[block.quizIndex];
+        
+        document.getElementById('quiz-question').innerText = qData.q;
+        document.getElementById('opt-0').innerText = qData.opts[0];
+        document.getElementById('opt-1').innerText = qData.opts[1];
+        document.getElementById('quiz-modal').style.display = 'flex';
+    }
+
+    function answerQuiz(optionIndex) {
+        document.getElementById('quiz-modal').style.display = 'none';
+        const qData = QUIZZES[currentQuizBlock.quizIndex];
+
+        if (optionIndex === qData.correct) {
+            playSound('win');
+            l3Score += 100;
+            document.getElementById('l3-score').innerText = l3Score;
+            updateLevel3();
+        } else {
+            triggerGameOver("Respuesta incorrecta. Recuerda repasar las tradiciones de Todos Santos.");
+        }
+    }
+</script>
+</body>
+</html>
